@@ -34,6 +34,64 @@ By the end you'll be able to:
 
 ---
 
+## Architecture
+
+The kit is **one OCI image** (descriptor + overlay with the baked `box-mount`
+binary) that composes onto any v3 workload. At runtime the `box-mount` client
+only ever sends a **sentinel** token; the **host-side proxy** swaps in the real
+Box token - stored on the host, never in the container - on outbound requests to
+allowlisted Box hosts, and keeps the mounted folder in two-way sync with Box.
+
+```mermaid
+flowchart LR
+    subgraph KIT["Kit v3 - one OCI image"]
+        direction TB
+        DESC["box-mount.yaml<br/>network-policy@1 . credential@1 . agent-context@1"]
+        OVL["overlay FROM scratch<br/>bakes box-mount binary + ENV sentinel"]
+        CTX["box-mount-context.md"]
+    end
+
+    subgraph HOST["Your Machine (Host)"]
+        direction TB
+        CLI["sbx CLI"]
+        SECRET["sbx secret store<br/>REAL Box token"]
+        PROXY["Host-side proxy<br/>network policy + credential injection"]
+    end
+
+    subgraph VM["Sandbox (microVM)"]
+        direction TB
+        WL["shell / agent workload"]
+        BM["box-mount CLI<br/>BOX_ACCESS_TOKEN = proxy-managed"]
+        MNT["/home/agent/workspace/box<br/>two-way mount"]
+    end
+
+    subgraph BOX["Box Cloud"]
+        direction TB
+        API["api.box.com"]
+        UP["upload.box.com"]
+        DL["dl.boxcloud.com / *.boxcloud.com"]
+        RT["*.services.box.net<br/>realtime events"]
+    end
+
+    KIT -- "sbx run --kit (compose)" --> WL
+    CLI -. drives .-> VM
+    SECRET -- "binds at create" --> PROXY
+    BM -- "Bearer proxy-managed" --> PROXY
+    PROXY -- "Bearer «real token»" --> API
+    PROXY --> UP
+    PROXY --> DL
+    PROXY --> RT
+    BM --- MNT
+    MNT <-. "two-way sync" .-> BOX
+
+    style KIT fill:#eafbea,stroke:#34a853
+    style HOST fill:#e8f0fe,stroke:#4285f4
+    style VM fill:#fff4e5,stroke:#fb8c00
+    style BOX fill:#f3e8fd,stroke:#8e44ad
+```
+
+---
+
 ## Agenda (90 minutes)
 
 | # | Lab | Time |
@@ -72,16 +130,23 @@ proxy does two jobs that matter for this workshop:
    secret that lives on the host. The agent sends a placeholder; the proxy swaps
    in the real value on the wire. **The container never sees the real token.**
 
-```
-Your machine
-├── Host filesystem        ← workspace dir shared (read/write); nothing else
-├── sbx secret store       ← the REAL Box token lives here, on the host
-│
-└── Sandbox (microVM)
-    ├── box-mount CLI       ← sends "Authorization: Bearer proxy-managed"
-    └── Outbound proxy  ────┼──→ rewrites header to the REAL token, but only for
-                            │    allowlisted Box hosts (api.box.com, …)
-                            └──→ everything else: default-deny
+Here is that token swap as a single request - the agent sends a sentinel, the
+proxy substitutes the real token on the wire, and the response comes back, all
+without the real token ever entering the sandbox:
+
+```mermaid
+sequenceDiagram
+    participant BM as box-mount (in sandbox)
+    participant PX as Host-side proxy
+    participant SS as sbx secret store (host)
+    participant BX as Box API
+    BM->>PX: GET api.box.com<br/>Authorization: Bearer proxy-managed
+    PX->>SS: look up real token for service "box"
+    SS-->>PX: «real Box token»
+    PX->>BX: GET api.box.com<br/>Authorization: Bearer «real token»
+    BX-->>PX: 200 OK
+    PX-->>BM: 200 OK
+    Note over BM: the container never sees the real token
 ```
 
 ### What a *kit* is
