@@ -3,7 +3,7 @@
 # OCI image. BuildKit reads the descriptor's `# syntax=docker/sandbox-kit:3`
 # line, pulls the kit frontend, validates the descriptor, builds the overlay
 # (which bakes the private box-mount binary) and attaches the descriptor to the
-# manifest. ONE artifact — no separate template to load.
+# manifest. ONE artifact - no separate template to load.
 #
 #   ./scripts/push-kit.sh <namespace>              # push <ns>/sbx-kit-box-mount
 #   DOCKERHUB_NAMESPACE=me ./scripts/push-kit.sh   # namespace via env

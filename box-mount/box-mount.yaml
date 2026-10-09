@@ -1,11 +1,11 @@
 # syntax=docker/sandbox-kit:3
 # yaml-language-server: $schema=https://raw.githubusercontent.com/docker/sandbox-kit-spec/main/schema/kit.schema.json
 #
-# Box Mount (two-way folder sync) — a Kit v3 mixin.
+# Box Mount (two-way folder sync) - a Kit v3 mixin.
 #
-# A v3 mixin carries its OWN content: the private box-mount client (~20–34 MB)
+# A v3 mixin carries its OWN content: the private box-mount client (~20-34 MB)
 # is baked into this kit's overlay (box-mount.dockerfile), so there is no
-# separate prebuilt image and no `sbx template load` — the kit is ONE OCI image
+# separate prebuilt image and no `sbx template load` - the kit is ONE OCI image
 # that composes directly onto any v3 shell/agent workload.
 schemaVersion: "3"
 kind: mixin
@@ -18,14 +18,14 @@ description: >-
 sourceUrl: https://github.com/ajeetraina/sbx-kits-box
 licenses: [Apache-2.0]
 
-# This kit's version IS its content's — it ships the box-mount v0.4.0 client.
+# This kit's version IS its content's - it ships the box-mount v0.4.0 client.
 version: "0.4.0"
 
 capabilities:
   # permissions.network.allow → network-policy@1 (host-only rules, so @1).
   # v3 is phase-scoped: install hooks and the running agent get separate
   # allow-lists, and an absent phase grants nothing. The binary is baked at
-  # BUILD time, so there is no install phase — every Box host is reached by the
+  # BUILD time, so there is no install phase - every Box host is reached by the
   # box-mount client at RUNTIME.
   - type: com.docker.sandbox/network-policy@1
     config:
@@ -56,7 +56,7 @@ capabilities:
     description: "Box OAuth / developer access token, injected as the Bearer credential on Box API requests."
     config:
       service: box
-      # phase is REQUIRED in v3. runtime — the credential exists so the
+      # phase is REQUIRED in v3. runtime - the credential exists so the
       # box-mount client can authenticate at steady state, not for an install
       # hook.
       phase: runtime
@@ -84,7 +84,7 @@ capabilities:
   # merges into the composed image. The BOX_ACCESS_TOKEN sentinel lives there.
 
   # agentInstructions.content → agent-context@1. A mixin carries `contentFile`
-  # alone (no `filename:` — that is workload-only).
+  # alone (no `filename:` - that is workload-only).
   - type: com.docker.sandbox/agent-context@1
     config:
       contentFile: ./box-mount-context.md

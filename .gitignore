@@ -1,4 +1,4 @@
-# The box-mount binary is a Box private-preview artifact. It is NOT committed —
+# The box-mount binary is a Box private-preview artifact. It is NOT committed -
 # obtain it from Box and stage it locally before building (see README, Lab 4).
 box-mount/bin/
 

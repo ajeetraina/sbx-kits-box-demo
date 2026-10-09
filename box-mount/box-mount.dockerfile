@@ -1,17 +1,17 @@
 # syntax=docker/dockerfile:1
 # check=skip=SecretsUsedInArgOrEnv
 # (BOX_ACCESS_TOKEN below is the literal sentinel "proxy-managed", not a real
-#  secret — the sbx proxy swaps in the real token outbound. Lint false positive.)
+#  secret - the sbx proxy swaps in the real token outbound. Lint false positive.)
 #
-# Box Mount overlay — carries the private box-mount client and the runtime ENV.
+# Box Mount overlay - carries the private box-mount client and the runtime ENV.
 #
 # A v3 mixin carries an overlay, so the binary ships here and lands on ANY base.
-# Because this is an overlay (not a root filesystem), there is NO ENTRYPOINT —
+# Because this is an overlay (not a root filesystem), there is NO ENTRYPOINT -
 # the base workload's launch command stays and the user/agent runs box-mount
 # from the shell.
 #
-# The box-mount binary (~20–34 MB) is private/confidential (Box preview) and is
-# git-ignored — stage it under this kit's own build context before building:
+# The box-mount binary (~20-34 MB) is private/confidential (Box preview) and is
+# git-ignored - stage it under this kit's own build context before building:
 #   box-mount/bin/linux/amd64/box-mount   (linux/amd64)
 #   box-mount/bin/linux/arm64/box-mount   (linux/arm64)
 # A kit's build context is rooted at its own directory, so the binary must live
@@ -31,7 +31,7 @@ ARG TARGETARCH
 # `box-mount` on PATH (the sync engine), so the binary MUST be installed under
 # that name or `mount` fails with FileNotFoundError. We also install an
 # `agent-mount` alias so the older CLI surface keeps working. COPY --chown/--chmod
-# sets ownership (root:root) and mode at copy time — the overlay-ownership audit
+# sets ownership (root:root) and mode at copy time - the overlay-ownership audit
 # requires every owner be 0/0 or 1000/1000.
 COPY --chown=root:root --chmod=0755 bin/linux/${TARGETARCH}/box-mount /usr/local/bin/box-mount
 COPY --chown=root:root --chmod=0755 bin/linux/${TARGETARCH}/box-mount /usr/local/bin/agent-mount

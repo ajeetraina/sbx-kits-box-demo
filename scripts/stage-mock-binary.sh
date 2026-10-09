@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# OPTIONAL — stage a MOCK box-mount so you can practice the build / validate /
+# OPTIONAL - stage a MOCK box-mount so you can practice the build / validate /
 # compose / kit-tck mechanics WITHOUT the real Box private-preview binary.
 #
 #   ./scripts/stage-mock-binary.sh
 #
 # The mock is a tiny shell script that answers `--version` and explains itself.
 # It is enough to make the overlay build, the descriptor validate, the kit
-# compose onto a workload, and kit-tck run — but it does NOT sync with Box.
+# compose onto a workload, and kit-tck run - but it does NOT sync with Box.
 # For real two-way sync, replace it with the genuine binary from Box (see the
 # README, "Lab 4: Get a Box token and stage the client").
 set -euo pipefail
@@ -18,9 +18,9 @@ for arch in amd64 arm64; do
   mkdir -p "$dir"
   cat > "$dir/box-mount" <<'STUB'
 #!/usr/bin/env bash
-# MOCK box-mount (workshop placeholder — NOT the real Box client).
+# MOCK box-mount (workshop placeholder - NOT the real Box client).
 case "${1:-}" in
-  --version|version) echo "box-mount 0.4.0 (MOCK — workshop placeholder)";;
+  --version|version) echo "box-mount 0.4.0 (MOCK - workshop placeholder)";;
   mount)   echo "MOCK: would mount Box folder '${3:-?}' at '${2:-?}' (no real sync)";;
   status)  echo "MOCK: no real mounts (this is the workshop placeholder binary)";;
   unmount) echo "MOCK: would unmount '${2:-?}'";;

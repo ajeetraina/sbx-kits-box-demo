@@ -15,7 +15,7 @@ Mount a Box folder into a local directory and keep it in two-way sync:
 
 Important:
  - Auth is pre-wired through the proxy. Do NOT run `box-mount config` and do
-   NOT write ~/.box-mount/box-config.json — that would override the proxy token.
+   NOT write ~/.box-mount/box-config.json - that would override the proxy token.
  - OAuth/developer tokens are short-lived. If sync starts failing with auth
    errors, the host must refresh the secret (`sbx secret set box <new-token>`)
    and recreate the sandbox.
