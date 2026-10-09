@@ -42,53 +42,9 @@ only ever sends a **sentinel** token; the **host-side proxy** swaps in the real
 Box token - stored on the host, never in the container - on outbound requests to
 allowlisted Box hosts, and keeps the mounted folder in two-way sync with Box.
 
-```mermaid
-flowchart LR
-    subgraph KIT["Kit v3 - one OCI image"]
-        direction TB
-        DESC["box-mount.yaml<br/>network-policy@1 . credential@1 . agent-context@1"]
-        OVL["overlay FROM scratch<br/>bakes box-mount binary + ENV sentinel"]
-        CTX["box-mount-context.md"]
-    end
-
-    subgraph HOST["Your Machine (Host)"]
-        direction TB
-        CLI["sbx CLI"]
-        SECRET["sbx secret store<br/>REAL Box token"]
-        PROXY["Host-side proxy<br/>network policy + credential injection"]
-    end
-
-    subgraph VM["Sandbox (microVM)"]
-        direction TB
-        WL["shell / agent workload"]
-        BM["box-mount CLI<br/>BOX_ACCESS_TOKEN = proxy-managed"]
-        MNT["/home/agent/workspace/box<br/>two-way mount"]
-    end
-
-    subgraph BOX["Box Cloud"]
-        direction TB
-        API["api.box.com"]
-        UP["upload.box.com"]
-        DL["dl.boxcloud.com / *.boxcloud.com"]
-        RT["*.services.box.net<br/>realtime events"]
-    end
-
-    KIT -- "sbx run --kit (compose)" --> WL
-    CLI -. drives .-> VM
-    SECRET -- "binds at create" --> PROXY
-    BM -- "Bearer proxy-managed" --> PROXY
-    PROXY -- "Bearer «real token»" --> API
-    PROXY --> UP
-    PROXY --> DL
-    PROXY --> RT
-    BM --- MNT
-    MNT <-. "two-way sync" .-> BOX
-
-    style KIT fill:#eafbea,stroke:#34a853
-    style HOST fill:#e8f0fe,stroke:#4285f4
-    style VM fill:#fff4e5,stroke:#fb8c00
-    style BOX fill:#f3e8fd,stroke:#8e44ad
-```
+<p align="center">
+  <img src="assets/architecture.png" alt="Box Mount kit architecture: the Kit v3 OCI image composes onto a sandbox workload; the host-side proxy swaps the sentinel token for the real Box token on outbound requests to allowlisted Box hosts and keeps the mount in two-way sync." width="100%">
+</p>
 
 ---
 
@@ -134,20 +90,9 @@ Here is that token swap as a single request - the agent sends a sentinel, the
 proxy substitutes the real token on the wire, and the response comes back, all
 without the real token ever entering the sandbox:
 
-```mermaid
-sequenceDiagram
-    participant BM as box-mount (in sandbox)
-    participant PX as Host-side proxy
-    participant SS as sbx secret store (host)
-    participant BX as Box API
-    BM->>PX: GET api.box.com<br/>Authorization: Bearer proxy-managed
-    PX->>SS: look up real token for service "box"
-    SS-->>PX: «real Box token»
-    PX->>BX: GET api.box.com<br/>Authorization: Bearer «real token»
-    BX-->>PX: 200 OK
-    PX-->>BM: 200 OK
-    Note over BM: the container never sees the real token
-```
+<p align="center">
+  <img src="assets/credential-injection.png" alt="Sequence diagram: box-mount sends 'Authorization: Bearer proxy-managed' to the host-side proxy, which looks up the real token in the sbx secret store, rewrites the header to the real token on the request to the Box API, and returns 200 OK. The container never sees the real token." width="90%">
+</p>
 
 ### What a *kit* is
 

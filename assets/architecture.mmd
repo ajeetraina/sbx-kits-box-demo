@@ -1,0 +1,41 @@
+%%{init: {"flowchart": {"useMaxWidth": false}, "themeVariables": {"fontSize": "16px"}}}%%
+flowchart LR
+    subgraph KIT["Kit v3 - one OCI image"]
+        direction TB
+        DESC["box-mount.yaml<br/>network-policy@1, credential@1, agent-context@1"]
+        OVL["overlay FROM scratch<br/>bakes box-mount binary + ENV sentinel"]
+        CTX["box-mount-context.md"]
+    end
+    subgraph HOST["Your Machine (Host)"]
+        direction TB
+        CLI["sbx CLI"]
+        SECRET["sbx secret store<br/>REAL Box token"]
+        PROXY["Host-side proxy<br/>network policy + credential injection"]
+    end
+    subgraph VM["Sandbox (microVM)"]
+        direction TB
+        WL["shell / agent workload"]
+        BM["box-mount CLI<br/>BOX_ACCESS_TOKEN = proxy-managed"]
+        MNT["/home/agent/workspace/box<br/>two-way mount"]
+    end
+    subgraph BOX["Box Cloud"]
+        direction TB
+        API["api.box.com"]
+        UP["upload.box.com"]
+        DL["dl.boxcloud.com / *.boxcloud.com"]
+        RT["*.services.box.net<br/>realtime events"]
+    end
+    KIT -- "sbx run --kit" --> WL
+    CLI -. drives .-> VM
+    SECRET -- "binds at create" --> PROXY
+    BM -- "Bearer proxy-managed" --> PROXY
+    PROXY -- "Bearer real-token" --> API
+    PROXY --> UP
+    PROXY --> DL
+    PROXY --> RT
+    BM --- MNT
+    MNT <-. "two-way sync" .-> BOX
+    style KIT fill:#eafbea,stroke:#34a853,color:#111
+    style HOST fill:#e8f0fe,stroke:#4285f4,color:#111
+    style VM fill:#fff4e5,stroke:#fb8c00,color:#111
+    style BOX fill:#f3e8fd,stroke:#8e44ad,color:#111
