@@ -1,6 +1,6 @@
 # Build a Docker Sandboxes Kit: The Box Mount Kit (Hands-On, 90 min)
 
-> **Status**: A 90-minute, hands-on workshop for the **Box team**. You'll build,
+> **Status**: A 90-minute, hands-on workshop. You'll build,
 > run, verify, and publish a **Kit v3** that brings Box's **Box Mount** client
 > into a Docker Sandbox - mounting a Box folder into an isolated microVM and
 > keeping it in two-way sync, with the Box token injected by the sandbox proxy so
