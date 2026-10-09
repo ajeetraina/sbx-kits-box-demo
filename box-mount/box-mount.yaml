@@ -1,0 +1,90 @@
+# syntax=docker/sandbox-kit:3
+# yaml-language-server: $schema=https://raw.githubusercontent.com/docker/sandbox-kit-spec/main/schema/kit.schema.json
+#
+# Box Mount (two-way folder sync) — a Kit v3 mixin.
+#
+# A v3 mixin carries its OWN content: the private box-mount client (~20–34 MB)
+# is baked into this kit's overlay (box-mount.dockerfile), so there is no
+# separate prebuilt image and no `sbx template load` — the kit is ONE OCI image
+# that composes directly onto any v3 shell/agent workload.
+schemaVersion: "3"
+kind: mixin
+displayName: Box Mount (two-way folder sync)
+description: >-
+  Mounts a Box folder into the sandbox and keeps it in two-way sync via Box's
+  box-mount client. Layer it onto a shell or agent workload; the box-mount CLI
+  (with an agent-mount alias) is then on PATH. OAuth / developer-token auth: set
+  the token with `sbx secret set box`. The kit holds no credentials.
+sourceUrl: https://github.com/ajeetraina/sbx-kits-box
+licenses: [Apache-2.0]
+
+# This kit's version IS its content's — it ships the box-mount v0.4.0 client.
+version: "0.4.0"
+
+capabilities:
+  # permissions.network.allow → network-policy@1 (host-only rules, so @1).
+  # v3 is phase-scoped: install hooks and the running agent get separate
+  # allow-lists, and an absent phase grants nothing. The binary is baked at
+  # BUILD time, so there is no install phase — every Box host is reached by the
+  # box-mount client at RUNTIME.
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      # Box API surface the box-mount client talks to. Start with the core hosts
+      # and widen using `sbx policy log <sandbox>` if a request gets blocked.
+      # Note: sbx `*` matches a SINGLE label only, so the nested realtime
+      # endpoints (e.g. 2.realtime.services.box.net) need their own
+      # *.realtime.services.box.net entry.
+      runtime:
+        allow:
+          - api.box.com          # REST API + OAuth token endpoint
+          - upload.box.com       # file uploads
+          - dl.boxcloud.com      # file downloads
+          - "*.boxcloud.com"     # download redirects (public/dl shards)
+          - "*.services.box.net" # realtime events long-poll (two-way sync)
+          - "*.realtime.services.box.net" # realtime event endpoints, e.g. 2.realtime.services.box.net (Box->local sync)
+          - "*.boxcdn.net"       # sync-engine min-version manifest (cdn07.boxcdn.net/AgentMount.json)
+
+  # credential@1, one per service. The real Box token never enters the
+  # container: box-mount sends the sentinel `Authorization: Bearer
+  # proxy-managed`, and the sbx proxy swaps in the real token from
+  # `sbx secret set box` on outbound requests to the Box hosts below.
+  - type: com.docker.sandbox/credential@1
+    # v3 entries are REQUIRED unless they opt out. `optional: true` lets the
+    # sandbox still start without a token (box-mount just can't sync).
+    # `optional` and `description` are entry-level (siblings of `config`).
+    optional: true
+    description: "Box OAuth / developer access token, injected as the Bearer credential on Box API requests."
+    config:
+      service: box
+      # phase is REQUIRED in v3. runtime — the credential exists so the
+      # box-mount client can authenticate at steady state, not for an install
+      # hook.
+      phase: runtime
+      apiKey:
+        name: BOX_ACCESS_TOKEN
+        # proxyManaged keeps the real token on the host: the in-container
+        # BOX_ACCESS_TOKEN carries only a sentinel, and the proxy swaps in the
+        # real token from `sbx secret set box` on the outbound rewrites below.
+        proxyManaged: true
+        # Every inject domain must appear in the SAME phase's allow list (an
+        # exact host match). All three literal hosts are in runtime.allow above.
+        inject:
+          - domain: api.box.com
+            header: Authorization
+            format: "Bearer %s"
+          - domain: upload.box.com
+            header: Authorization
+            format: "Bearer %s"
+          - domain: dl.boxcloud.com
+            header: Authorization
+            format: "Bearer %s"
+
+  # environment.variables → ENV in the recipe (see box-mount.dockerfile). A
+  # mixin carries static env through ENV on its recipe's final stage, which
+  # merges into the composed image. The BOX_ACCESS_TOKEN sentinel lives there.
+
+  # agentInstructions.content → agent-context@1. A mixin carries `contentFile`
+  # alone (no `filename:` — that is workload-only).
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      contentFile: ./box-mount-context.md
