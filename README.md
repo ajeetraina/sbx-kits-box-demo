@@ -1,4 +1,4 @@
-# Build a Docker Sandboxes Kit: The Box Mount Kit 
+f# Build a Docker Sandboxes Kit: The Box Mount Kit 
 
 > **Status**: A hands-on workshop. You'll build,
 > run, verify, and publish a **Kit v3** that brings Box's **Box Mount** client
@@ -15,7 +15,7 @@ run every command verbatim.
 ## What you'll need
 
 - **macOS on Apple Silicon** or **Windows 11 (x86_64)** - the sbx runtime does not emulate, so your host arch is the sandbox arch.
-- **Docker** with **`docker buildx`** (bundled with modern Docker Desktop / Rancher Desktop). The daemon must be running to build the kit.
+- **Docker** with **`docker buildx`** (bundled with modern Docker Desktop. The daemon must be running to build the kit.
 - The **`sbx` CLI** (we install it in Lab 2).
 - A **Box developer token** (free, ~60 min lifetime - we get one in Lab 4). Box-team attendees can also use an OAuth access token.
 - *(Optional)* the real **`box-mount` binary** from Box for live sync. **Don't have it yet?** A one-command mock (`scripts/stage-mock-binary.sh`) lets you complete every build/validate/compose step without it.
