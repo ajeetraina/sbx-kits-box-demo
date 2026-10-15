@@ -411,6 +411,19 @@ and sbx builds it on demand and layers it onto a stock v3 shell workload:
 sbx run docker/sbx-kit-shell:1.0.0 --kit ./box-mount .
 ```
 
+> **Composing onto the Claude agent instead of a shell?** The same mixin layers
+> onto any v3 workload - swap the shell kit for the Claude workload kit
+> `docker/sbx-kit-claude:1.0.0` (note: it's `sbx-kit-claude`, **not** `sbx-claude`,
+> and there is no `:latest` tag):
+>
+> ```bash
+> sbx run docker/sbx-kit-claude:1.0.0 --kit ./box-mount .                              # local kit
+> sbx run docker/sbx-kit-claude:1.0.0 --kit docker.io/<ns>/sbx-kit-box-mount:0.4.0 .   # from registry
+> ```
+>
+> Claude Code then starts inside the sandbox with `box-mount` on PATH and the Box
+> token injected by the proxy, exactly as below.
+
 This drops you into a shell **inside the sandbox**, with `box-mount` on PATH. Try:
 
 ```bash
@@ -619,6 +632,8 @@ I_KNOW_THIS_IS_PRIVATE=1 ./scripts/push-kit.sh <ns>   # push (PRIVATE repo only)
 sbx run docker/sbx-kit-shell:1.0.0 --kit ./box-mount .            # compose local kit, interactive
 sbx run docker/sbx-kit-shell:1.0.0 --kit ./box-mount -- <cmd>     # run one command, then exit
 sbx run docker/sbx-kit-shell:1.0.0 --kit docker.io/<ns>/sbx-kit-box-mount:0.4.0 .   # from registry
+sbx run docker/sbx-kit-claude:1.0.0 --kit ./box-mount .           # compose onto the Claude agent workload
+sbx run docker/sbx-kit-claude:1.0.0 --kit docker.io/<ns>/sbx-kit-box-mount:0.4.0 .  # Claude workload, from registry
 
 # ── Box Mount (inside the sandbox) ───────────────────────────────────────────
 box-mount --version                               # (agent-mount is an alias)
