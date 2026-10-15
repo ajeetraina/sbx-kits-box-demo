@@ -369,17 +369,24 @@ see an error about a missing `bin/linux/<arch>/box-mount`, go back to Lab 4.
 ### Step 2 - Build the kit into an OCI layout
 
 Now build the real artifact (binary baked in, descriptor attached) into a local OCI
-layout - we'll conformance-check it in Lab 9. `PUSH=0` means build-only, no registry:
+layout - we'll conformance-check it in Lab 9. `PUSH=0` means build-only, no registry.
+Set `PLATFORMS` to **your host's arch** so the build only needs the binary you staged
+in Lab 4:
 
 ```bash
-PUSH=0 ./scripts/push-kit.sh mynamespace
+# Apple Silicon / arm64 host:
+PLATFORMS=linux/arm64 PUSH=0 ./scripts/push-kit.sh mynamespace
+# Intel / amd64 host:  PLATFORMS=linux/amd64 PUSH=0 ./scripts/push-kit.sh mynamespace
 ```
 
 This writes `/tmp/sbx-kit-box-mount-layout`. The `mynamespace` argument is only
 used to name the image tag here; nothing is pushed.
 
-> **Single-arch, faster:** add `PLATFORMS=linux/arm64` (or `linux/amd64`) before the
-> command to build just your host's arch.
+> **Why set `PLATFORMS`?** Without it, `push-kit.sh` builds **both** arches
+> (`linux/amd64,linux/arm64`) and the build **fails** unless you staged *both*
+> binaries in Lab 4. Pinning it to your host's arch builds just the one you have.
+> Only drop `PLATFORMS` (to build both) when you've staged both arches - e.g. right
+> before a multi-arch push.
 
 > **Checkpoint:** both commands succeed and `/tmp/sbx-kit-box-mount-layout` exists.
 
@@ -611,9 +618,10 @@ Box token never enters the container, and published it as a single OCI image.
 # ── This kit ─────────────────────────────────────────────────────────────────
 ./scripts/stage-mock-binary.sh                    # optional: mock binary (no real sync)
 docker buildx build box-mount -f box-mount/box-mount.yaml --output type=cacheonly   # validate descriptor
-PUSH=0 ./scripts/push-kit.sh <ns>                 # build-only → /tmp/sbx-kit-box-mount-layout
+PLATFORMS=linux/arm64 PUSH=0 ./scripts/push-kit.sh <ns>   # build-only, host arch → /tmp/sbx-kit-box-mount-layout
+                                                  #   (no PLATFORMS ⇒ builds BOTH arches, needs both binaries staged)
 kit-tck validate --layout /tmp/sbx-kit-box-mount-layout 0.4.0                        # conformance check
-I_KNOW_THIS_IS_PRIVATE=1 ./scripts/push-kit.sh <ns>   # push (PRIVATE repo only)
+I_KNOW_THIS_IS_PRIVATE=1 ./scripts/push-kit.sh <ns>   # push (PRIVATE repo only; both arches staged)
 
 # ── Run / compose ────────────────────────────────────────────────────────────
 sbx run docker/sbx-kit-shell:1.0.0 --kit ./box-mount .            # compose local kit, interactive
