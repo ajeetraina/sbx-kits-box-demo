@@ -1,4 +1,4 @@
-f# Build a Docker Sandboxes Kit: The Box Mount Kit 
+# Build a Docker Sandboxes Kit: The Box Mount Kit 
 
 > **Status**: A hands-on workshop. You'll build,
 > run, verify, and publish a **Kit v3** that brings Box's **Box Mount** client
